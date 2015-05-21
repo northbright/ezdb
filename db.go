@@ -2,13 +2,20 @@ package ezdb
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jmhodges/levigo"
+	"github.com/northbright/fnlog"
+	"github.com/northbright/pathhelper"
+	"log"
+	"os"
+	"path"
+	"path/filepath"
 	"strconv"
 )
 
 var (
-	DefCacheSize int = 1024 * 1024 * 16
+	DefCacheSize          int = 1024 * 1024 * 16
+	logger                *log.Logger
+	DefDBFolderPermission os.FileMode = 0755
 )
 
 type DB struct {
@@ -23,13 +30,13 @@ var DEBUG = true
 
 var ERR_KEY_DOES_NOT_EXIST = "key does not exist"
 
-func Open(path string, cacheSize int) (db *DB, err error) {
+func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	db = new(DB)
 
 	if db.cache = levigo.NewLRUCache(cacheSize); db.cache == nil {
 		err = errors.New("levigo.NewLRUCache() == nil")
 		if DEBUG {
-			fmt.Println(err)
+			logger.Println(err)
 		}
 		return nil, err
 	}
@@ -37,8 +44,26 @@ func Open(path string, cacheSize int) (db *DB, err error) {
 	opts.SetCache(db.cache)
 	opts.SetCreateIfMissing(true)
 
-	if db.LevigoDB, err = levigo.Open(path, opts); err != nil {
-		fmt.Println(err)
+	// Create DB folder if it does not exist
+	absPath := ""
+	if !filepath.IsAbs(dbPath) {
+		currentDir := ""
+		if currentDir, err = pathhelper.GetCurrentExecDir(); err != nil {
+			logger.Printf("pathhelper.GetCurrentExeDir() err: %v", err)
+			return nil, err
+		}
+		absPath = path.Join(currentDir, dbPath)
+	} else {
+		absPath = dbPath
+	}
+
+	if err = os.MkdirAll(absPath, DefDBFolderPermission); err != nil {
+		logger.Printf("os.MkDirAll(%v, %v) err: %v", absPath, DefDBFolderPermission, err)
+		return nil, err
+	}
+
+	if db.LevigoDB, err = levigo.Open(absPath, opts); err != nil {
+		logger.Println(err)
 		return nil, err
 	}
 
@@ -148,4 +173,8 @@ func (db *DB) DeleteStr(key string) (err error) {
 
 func (db *DB) NewIterator() *levigo.Iterator {
 	return db.LevigoDB.NewIterator(db.roIt)
+}
+
+func init() {
+	logger = fnlog.New("")
 }
