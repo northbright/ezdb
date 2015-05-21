@@ -29,7 +29,7 @@ type DB struct {
 }
 
 type GoThroughProcessor interface {
-	Process(k, v string)
+	Process(k, v string) error
 }
 
 func Open(dbPath string, cacheSize int) (db *DB, err error) {
@@ -185,7 +185,7 @@ func IsIteratorValidForGoThrough(it *levigo.Iterator, keyEnd string) bool {
 	}
 }
 
-func (db *DB) GoThrough(keyStart, keyEnd string, processor GoThroughProcessor) {
+func (db *DB) GoThrough(keyStart, keyEnd string, processor GoThroughProcessor) (err error) {
 	it := db.NewIterator()
 	defer it.Close()
 
@@ -200,8 +200,12 @@ func (db *DB) GoThrough(keyStart, keyEnd string, processor GoThroughProcessor) {
 	for ; IsIteratorValidForGoThrough(it, keyEnd); it.Next() {
 		k = string(it.Key())
 		v = string(it.Value())
-		processor.Process(k, v)
+		if err = processor.Process(k, v); err != nil {
+			logger.Printf("processor.Process(%v, %v) err: %v", k, v, err)
+			return err
+		}
 	}
+	return nil
 }
 
 func init() {
