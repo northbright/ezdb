@@ -13,9 +13,11 @@ import (
 )
 
 var (
-	DefCacheSize          int = 1024 * 1024 * 16
-	logger                *log.Logger
-	DefDBFolderPermission os.FileMode = 0755
+	DefCacheSize           int = 1024 * 1024 * 16
+	logger                 *log.Logger
+	DefDBFolderPermission  os.FileMode = 0755
+	DEBUG                              = true
+	ERR_KEY_DOES_NOT_EXIST             = "key does not exist"
 )
 
 type DB struct {
@@ -26,9 +28,9 @@ type DB struct {
 	cache    *levigo.Cache
 }
 
-var DEBUG = true
-
-var ERR_KEY_DOES_NOT_EXIST = "key does not exist"
+type GoThroughProcessor interface {
+	Process(k, v string)
+}
 
 func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	db = new(DB)
@@ -173,6 +175,33 @@ func (db *DB) DeleteStr(key string) (err error) {
 
 func (db *DB) NewIterator() *levigo.Iterator {
 	return db.LevigoDB.NewIterator(db.roIt)
+}
+
+func IsIteratorValidForGoThrough(it *levigo.Iterator, keyEnd string) bool {
+	if keyEnd != "" {
+		return it.Valid() && string(it.Key()) <= keyEnd
+	} else {
+		return it.Valid()
+	}
+}
+
+func (db *DB) GoThrough(keyStart, keyEnd string, processor GoThroughProcessor) {
+	it := db.NewIterator()
+	defer it.Close()
+
+	if keyStart != "" {
+		it.Seek([]byte(keyStart))
+	} else {
+		it.SeekToFirst()
+	}
+
+	k := ""
+	v := ""
+	for ; IsIteratorValidForGoThrough(it, keyEnd); it.Next() {
+		k = string(it.Key())
+		v = string(it.Value())
+		processor.Process(k, v)
+	}
 }
 
 func init() {
