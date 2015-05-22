@@ -4,11 +4,8 @@ import (
 	"errors"
 	"github.com/jmhodges/levigo"
 	"github.com/northbright/fnlog"
-	"github.com/northbright/pathhelper"
 	"log"
 	"os"
-	"path"
-	"path/filepath"
 	"strconv"
 )
 
@@ -35,6 +32,8 @@ type GoThroughProcessor interface {
 func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	db = new(DB)
 
+	logger.Printf("Open(): dbPath = %v, cacheSize = %v", dbPath, cacheSize)
+
 	if db.cache = levigo.NewLRUCache(cacheSize); db.cache == nil {
 		err = errors.New("levigo.NewLRUCache() == nil")
 		if DEBUG {
@@ -46,25 +45,12 @@ func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	opts.SetCache(db.cache)
 	opts.SetCreateIfMissing(true)
 
-	// Create DB folder if it does not exist
-	absPath := ""
-	if !filepath.IsAbs(dbPath) {
-		currentDir := ""
-		if currentDir, err = pathhelper.GetCurrentExecDir(); err != nil {
-			logger.Printf("pathhelper.GetCurrentExeDir() err: %v", err)
-			return nil, err
-		}
-		absPath = path.Join(currentDir, dbPath)
-	} else {
-		absPath = dbPath
-	}
-
-	if err = os.MkdirAll(absPath, DefDBFolderPermission); err != nil {
-		logger.Printf("os.MkDirAll(%v, %v) err: %v", absPath, DefDBFolderPermission, err)
+	if err = os.MkdirAll(dbPath, DefDBFolderPermission); err != nil {
+		logger.Printf("os.MkDirAll(%v, %v) err: %v", dbPath, DefDBFolderPermission, err)
 		return nil, err
 	}
 
-	if db.LevigoDB, err = levigo.Open(absPath, opts); err != nil {
+	if db.LevigoDB, err = levigo.Open(dbPath, opts); err != nil {
 		logger.Println(err)
 		return nil, err
 	}
