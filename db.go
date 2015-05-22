@@ -205,6 +205,12 @@ func (db *DB) GoThrough(keyStart, keyEnd string, processor GoThroughProcessor) (
 			return err
 		}
 	}
+
+	if err := it.GetError(); err != nil {
+		logger.Printf("it.GetError(): %s\n", err)
+		return err
+	}
+
 	return nil
 }
 
