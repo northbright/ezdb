@@ -129,11 +129,15 @@ func (db *DB) GetStr(key string) (value string, err error) {
 	}
 }
 
+// Store int64 as string in db.
+// Should be used with Getint64().
 func (db *DB) PutInt64(key string, value int64) (err error) {
 	s := strconv.FormatInt(value, 10)
 	return db.PutStr(key, s)
 }
 
+// Get string value and convert it to int64.
+// Should be used with PutInt64().
 func (db *DB) GetInt64(key string) (value int64, err error) {
 	s, err := db.GetStr(key)
 	if err != nil {
@@ -142,11 +146,15 @@ func (db *DB) GetInt64(key string) (value int64, err error) {
 	return strconv.ParseInt(s, 10, 64)
 }
 
+// Store uint64 as string in db.
+// Should be used with GetUint64().
 func (db *DB) PutUint64(key string, value uint64) (err error) {
 	s := strconv.FormatUint(value, 10)
 	return db.PutStr(key, s)
 }
 
+// Get string value and convert it to uint64.
+// Should be used with PutUInt64().
 func (db *DB) GetUint64(key string) (value uint64, err error) {
 	s, err := db.GetStr(key)
 	if err != nil {
