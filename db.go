@@ -209,5 +209,5 @@ func (db *DB) GoThrough(keyStart, keyEnd string, processor GoThroughProcessor) (
 }
 
 func init() {
-	logger = fnlog.New("")
+	logger = fnlog.New("", true, false, false)
 }
