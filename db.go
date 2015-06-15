@@ -2,18 +2,16 @@ package ezdb
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jmhodges/levigo"
-	"github.com/northbright/fnlog"
-	"log"
 	"os"
 	"strconv"
 )
 
 var (
-	DefCacheSize           int = 1024 * 1024 * 16
-	logger                 *log.Logger
+	DEBUG                              = false // Set this flag to true to output debug messages from this package.
+	DefCacheSize           int         = 1024 * 1024 * 16
 	DefDBFolderPermission  os.FileMode = 0755
-	DEBUG                              = true
 	ERR_KEY_DOES_NOT_EXIST             = "key does not exist"
 )
 
@@ -32,12 +30,14 @@ type GoThroughProcessor interface {
 func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	db = new(DB)
 
-	logger.Printf("Open(): dbPath = %v, cacheSize = %v", dbPath, cacheSize)
+	if DEBUG {
+		fmt.Printf("Open(): dbPath = %v, cacheSize = %v\n", dbPath, cacheSize)
+	}
 
 	if db.cache = levigo.NewLRUCache(cacheSize); db.cache == nil {
 		err = errors.New("levigo.NewLRUCache() == nil")
 		if DEBUG {
-			logger.Println(err)
+			fmt.Println(err)
 		}
 		return nil, err
 	}
@@ -46,12 +46,16 @@ func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	opts.SetCreateIfMissing(true)
 
 	if err = os.MkdirAll(dbPath, DefDBFolderPermission); err != nil {
-		logger.Printf("os.MkDirAll(%v, %v) err: %v", dbPath, DefDBFolderPermission, err)
+		if DEBUG {
+			fmt.Printf("os.MkDirAll(%v, %v) err: %v\n", dbPath, DefDBFolderPermission, err)
+		}
 		return nil, err
 	}
 
 	if db.LevigoDB, err = levigo.Open(dbPath, opts); err != nil {
-		logger.Println(err)
+		if DEBUG {
+			fmt.Println(err)
+		}
 		return nil, err
 	}
 
@@ -195,19 +199,19 @@ func (db *DB) GoThrough(keyStart, keyEnd string, processor GoThroughProcessor) (
 		k = string(it.Key())
 		v = string(it.Value())
 		if err = processor.Process(k, v); err != nil {
-			logger.Printf("processor.Process(%v, %v) err: %v", k, v, err)
+			if DEBUG {
+				fmt.Printf("processor.Process(%v, %v) err: %v\n", k, v, err)
+			}
 			return err
 		}
 	}
 
 	if err := it.GetError(); err != nil {
-		logger.Printf("it.GetError(): %s\n", err)
+		if DEBUG {
+			fmt.Printf("it.GetError(): %s\n", err)
+		}
 		return err
 	}
 
 	return nil
-}
-
-func init() {
-	logger = fnlog.New("", true, false, false)
 }
