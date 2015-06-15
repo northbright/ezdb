@@ -9,24 +9,27 @@ import (
 )
 
 var (
-	DEBUG                              = false // Set this flag to true to output debug messages from this package.
-	DefCacheSize           int         = 1024 * 1024 * 16
-	DefDBFolderPermission  os.FileMode = 0755
-	ERR_KEY_DOES_NOT_EXIST             = "key does not exist"
+	DEBUG                              = false                // Set this flag to true to output debug messages from this package.
+	DefCacheSize           int         = 1024 * 1024 * 16     // Default leveldb cache size.
+	DefDBFolderPermission  os.FileMode = 0755                 // Default database dir permission
+	ERR_KEY_DOES_NOT_EXIST             = "key does not exist" // Key not exists error message.
 )
 
+// DB is a wrapper of levigo.DB.
 type DB struct {
-	LevigoDB *levigo.DB
-	ro       *levigo.ReadOptions
-	roIt     *levigo.ReadOptions
-	wo       *levigo.WriteOptions
-	cache    *levigo.Cache
+	LevigoDB *levigo.DB           // Instance of levigo.DB
+	ro       *levigo.ReadOptions  // Read options for Get() of leveldb.
+	roIt     *levigo.ReadOptions  // Read options for itarators of leveldb.
+	wo       *levigo.WriteOptions // Write options for Put() of leveldb.
+	cache    *levigo.Cache        // Cache of leveldb.
 }
 
+// GoThroughProcessor provides the interface to process leveldb record while go through the leveldb database.
 type GoThroughProcessor interface {
 	Process(k, v string) error
 }
 
+// Open() opens a leveldb database.
 func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	db = new(DB)
 
@@ -67,7 +70,7 @@ func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	return db, err
 }
 
-// Close an ezdb.DB database.
+// Close() Closes the leveldb database after use.
 func (db *DB) Close() {
 	if db == nil {
 		return
@@ -95,22 +98,27 @@ func (db *DB) Close() {
 	}
 }
 
+// Put is a wrapper for levigo.DB.Put().
 func (db *DB) Put(key, value []byte) (err error) {
 	return db.LevigoDB.Put(db.wo, key, value)
 }
 
+// Get is a wrapper for levigo.DB.Get().
 func (db *DB) Get(key []byte) (value []byte, err error) {
 	return db.LevigoDB.Get(db.ro, key)
 }
 
+// Delete is a wrapper for levigo.DB.Delete()
 func (db *DB) Delete(key []byte) (err error) {
 	return db.LevigoDB.Delete(db.wo, key)
 }
 
+// PutStr() put the key / value as string value.
 func (db *DB) PutStr(key, value string) (err error) {
 	return db.Put([]byte(key), []byte(value))
 }
 
+// KeyExist() check if key exists or not.
 func (db *DB) KeyExist(key string) (exist bool, err error) {
 	v, err := db.Get([]byte(key))
 	if err != nil {
@@ -124,6 +132,7 @@ func (db *DB) KeyExist(key string) (exist bool, err error) {
 	}
 }
 
+// GetStr() get the key / value as string value.
 func (db *DB) GetStr(key string) (value string, err error) {
 	v, err := db.Get([]byte(key))
 	if v == nil {
@@ -133,15 +142,13 @@ func (db *DB) GetStr(key string) (value string, err error) {
 	}
 }
 
-// Store int64 as string in db.
-// Should be used with Getint64().
+// PutInt64() stores int64 as string in db. It should be used with Getint64().
 func (db *DB) PutInt64(key string, value int64) (err error) {
 	s := strconv.FormatInt(value, 10)
 	return db.PutStr(key, s)
 }
 
-// Get string value and convert it to int64.
-// Should be used with PutInt64().
+// GetInt64() get string value and convert it to int64. It should be used with PutInt64().
 func (db *DB) GetInt64(key string) (value int64, err error) {
 	s, err := db.GetStr(key)
 	if err != nil {
@@ -150,15 +157,13 @@ func (db *DB) GetInt64(key string) (value int64, err error) {
 	return strconv.ParseInt(s, 10, 64)
 }
 
-// Store uint64 as string in db.
-// Should be used with GetUint64().
+// PutUint64() store uint64 as string in db. It should be used with GetUint64().
 func (db *DB) PutUint64(key string, value uint64) (err error) {
 	s := strconv.FormatUint(value, 10)
 	return db.PutStr(key, s)
 }
 
-// Get string value and convert it to uint64.
-// Should be used with PutUInt64().
+// GetUint64() get string value and convert it to uint64. It should be used with PutUInt64().
 func (db *DB) GetUint64(key string) (value uint64, err error) {
 	s, err := db.GetStr(key)
 	if err != nil {
@@ -167,14 +172,17 @@ func (db *DB) GetUint64(key string) (value uint64, err error) {
 	return strconv.ParseUint(s, 10, 64)
 }
 
+// DeleteStr() delete the string key.
 func (db *DB) DeleteStr(key string) (err error) {
 	return db.Delete([]byte(key))
 }
 
+// NewIterator() creates a new iterator of levigo.
 func (db *DB) NewIterator() *levigo.Iterator {
 	return db.LevigoDB.NewIterator(db.roIt)
 }
 
+// IsIteratorValidForGoThrough() checks if current iterator is valid while go through the db.
 func IsIteratorValidForGoThrough(it *levigo.Iterator, keyEnd string) bool {
 	if keyEnd != "" {
 		return it.Valid() && string(it.Key()) <= keyEnd
@@ -183,6 +191,7 @@ func IsIteratorValidForGoThrough(it *levigo.Iterator, keyEnd string) bool {
 	}
 }
 
+// GoThrough() goes through the leveldb db and call the GoThroughProcessor.Process() to process data.
 func (db *DB) GoThrough(keyStart, keyEnd string, processor GoThroughProcessor) (err error) {
 	it := db.NewIterator()
 	defer it.Close()
