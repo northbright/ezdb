@@ -91,7 +91,7 @@ func (db *DB) Close() {
 	if db.LevigoDB != nil {
 		db.LevigoDB.Close()
 	}
-	// delete cache AFTER delete db or it will hang.
+	// delete cache AFTER close leveldb or it will hang.
 	// See cache in http://leveldb.googlecode.com/svn/trunk/doc/index.html
 	if db.cache != nil {
 		db.cache.Close()
