@@ -3,9 +3,10 @@ package ezdb
 import (
 	"errors"
 	"fmt"
-	"github.com/jmhodges/levigo"
 	"os"
 	"strconv"
+
+	"github.com/jmhodges/levigo"
 )
 
 var (
