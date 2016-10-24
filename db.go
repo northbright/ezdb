@@ -30,7 +30,7 @@ type GoThroughProcessor interface {
 	Process(k, v string) error
 }
 
-// Open() opens a leveldb database.
+// Open opens a leveldb database.
 func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	db = new(DB)
 
@@ -71,7 +71,7 @@ func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	return db, err
 }
 
-// Close() Closes the leveldb database after use.
+// Close closes the leveldb database after use.
 func (db *DB) Close() {
 	if db == nil {
 		return
@@ -114,12 +114,12 @@ func (db *DB) Delete(key []byte) (err error) {
 	return db.LevigoDB.Delete(db.wo, key)
 }
 
-// PutStr() put the key / value as string value.
+// PutStr puts the key / value as string value.
 func (db *DB) PutStr(key, value string) (err error) {
 	return db.Put([]byte(key), []byte(value))
 }
 
-// KeyExist() check if key exists or not.
+// KeyExist checks if key exists or not.
 func (db *DB) KeyExist(key string) (exist bool, err error) {
 	v, err := db.Get([]byte(key))
 	if err != nil {
@@ -128,28 +128,26 @@ func (db *DB) KeyExist(key string) (exist bool, err error) {
 
 	if v == nil {
 		return false, nil
-	} else {
-		return true, nil
 	}
+	return true, nil
 }
 
-// GetStr() get the key / value as string value.
+// GetStr gets the key / value as string value.
 func (db *DB) GetStr(key string) (value string, err error) {
 	v, err := db.Get([]byte(key))
 	if v == nil {
 		return "", errors.New(ERR_KEY_DOES_NOT_EXIST)
-	} else {
-		return string(v), err
 	}
+	return string(v), err
 }
 
-// PutInt64() stores int64 as string in db. It should be used with Getint64().
+// PutInt64 stores int64 as string in db. It should be used with Getint64().
 func (db *DB) PutInt64(key string, value int64) (err error) {
 	s := strconv.FormatInt(value, 10)
 	return db.PutStr(key, s)
 }
 
-// GetInt64() get string value and convert it to int64. It should be used with PutInt64().
+// GetInt64 get string value and convert it to int64. It should be used with PutInt64().
 func (db *DB) GetInt64(key string) (value int64, err error) {
 	s, err := db.GetStr(key)
 	if err != nil {
@@ -158,13 +156,13 @@ func (db *DB) GetInt64(key string) (value int64, err error) {
 	return strconv.ParseInt(s, 10, 64)
 }
 
-// PutUint64() store uint64 as string in db. It should be used with GetUint64().
+// PutUint64 store uint64 as string in db. It should be used with GetUint64().
 func (db *DB) PutUint64(key string, value uint64) (err error) {
 	s := strconv.FormatUint(value, 10)
 	return db.PutStr(key, s)
 }
 
-// GetUint64() get string value and convert it to uint64. It should be used with PutUInt64().
+// GetUint64 get string value and convert it to uint64. It should be used with PutUInt64().
 func (db *DB) GetUint64(key string) (value uint64, err error) {
 	s, err := db.GetStr(key)
 	if err != nil {
@@ -173,26 +171,25 @@ func (db *DB) GetUint64(key string) (value uint64, err error) {
 	return strconv.ParseUint(s, 10, 64)
 }
 
-// DeleteStr() delete the string key.
+// DeleteStr delete the string key.
 func (db *DB) DeleteStr(key string) (err error) {
 	return db.Delete([]byte(key))
 }
 
-// NewIterator() creates a new iterator of levigo.
+// NewIterator creates a new iterator of levigo.
 func (db *DB) NewIterator() *levigo.Iterator {
 	return db.LevigoDB.NewIterator(db.roIt)
 }
 
-// IsIteratorValidForGoThrough() checks if current iterator is valid while go through the db.
+// IsIteratorValidForGoThrough checks if current iterator is valid while go through the db.
 func IsIteratorValidForGoThrough(it *levigo.Iterator, keyEnd string) bool {
 	if keyEnd != "" {
 		return it.Valid() && string(it.Key()) <= keyEnd
-	} else {
-		return it.Valid()
 	}
+	return it.Valid()
 }
 
-// GoThrough() goes through the leveldb db and call the GoThroughProcessor.Process() to process data.
+// GoThrough goes through the leveldb db and call the GoThroughProcessor.Process() to process data.
 func (db *DB) GoThrough(keyStart, keyEnd string, processor GoThroughProcessor) (err error) {
 	it := db.NewIterator()
 	defer it.Close()
