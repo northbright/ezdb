@@ -13,7 +13,7 @@ var (
 	// DEBUG is debug mode.
 	// Set this flag to true to output debug messages from this package.
 	DEBUG                             = false
-	defCacheSize          int         = 1024 * 1024 * 16     // Default leveldb cache size.
+	defCacheSize                      = 1024 * 1024 * 16     // Default leveldb cache size.
 	defDBFolderPermission os.FileMode = 0755                 // Default database dir permission
 	errKeyNotExists                   = "key does not exist" // Key not exists error message.
 )
