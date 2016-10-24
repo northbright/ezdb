@@ -12,10 +12,10 @@ import (
 var (
 	// DEBUG is debug mode.
 	// Set this flag to true to output debug messages from this package.
-	DEBUG                              = false
-	DefCacheSize           int         = 1024 * 1024 * 16     // Default leveldb cache size.
-	DefDBFolderPermission  os.FileMode = 0755                 // Default database dir permission
-	ERR_KEY_DOES_NOT_EXIST             = "key does not exist" // Key not exists error message.
+	DEBUG                             = false
+	defCacheSize          int         = 1024 * 1024 * 16     // Default leveldb cache size.
+	defDBFolderPermission os.FileMode = 0755                 // Default database dir permission
+	errKeyNotExists                   = "key does not exist" // Key not exists error message.
 )
 
 // DB is a wrapper of levigo.DB.
@@ -51,9 +51,9 @@ func Open(dbPath string, cacheSize int) (db *DB, err error) {
 	opts.SetCache(db.cache)
 	opts.SetCreateIfMissing(true)
 
-	if err = os.MkdirAll(dbPath, DefDBFolderPermission); err != nil {
+	if err = os.MkdirAll(dbPath, defDBFolderPermission); err != nil {
 		if DEBUG {
-			fmt.Printf("os.MkDirAll(%v, %v) err: %v\n", dbPath, DefDBFolderPermission, err)
+			fmt.Printf("os.MkDirAll(%v, %v) err: %v\n", dbPath, defDBFolderPermission, err)
 		}
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (db *DB) KeyExist(key string) (exist bool, err error) {
 func (db *DB) GetStr(key string) (value string, err error) {
 	v, err := db.Get([]byte(key))
 	if v == nil {
-		return "", errors.New(ERR_KEY_DOES_NOT_EXIST)
+		return "", errors.New(errKeyNotExists)
 	}
 	return string(v), err
 }
