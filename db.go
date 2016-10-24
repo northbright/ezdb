@@ -10,7 +10,9 @@ import (
 )
 
 var (
-	DEBUG                              = false                // Set this flag to true to output debug messages from this package.
+	// DEBUG is debug mode.
+	// Set this flag to true to output debug messages from this package.
+	DEBUG                              = false
 	DefCacheSize           int         = 1024 * 1024 * 16     // Default leveldb cache size.
 	DefDBFolderPermission  os.FileMode = 0755                 // Default database dir permission
 	ERR_KEY_DOES_NOT_EXIST             = "key does not exist" // Key not exists error message.
